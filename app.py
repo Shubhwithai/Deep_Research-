@@ -9,7 +9,7 @@ from datetime import datetime
 # Page config for better appearance
 st.set_page_config(
     page_title="Perplexity AI Research Assistant",
-    page_icon="🔍",
+    page_icon=":mag:",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -80,71 +80,6 @@ def main():
             padding: 1rem;
             border-radius: 8px;
         }
-        .research-context-box {
-            background-color: #1a1a1a;
-            color: #e0e0e0;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #333;
-        }
-        .context-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 12px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .context-icon {
-            height: 20px;
-            width: 20px;
-            margin-right: 10px;
-        }
-        .source-count {
-            margin-left: auto;
-            color: #999;
-            font-size: 14px;
-            font-weight: normal;
-        }
-        .context-description {
-            margin-bottom: 15px;
-            line-height: 1.5;
-        }
-        .search-terms {
-            background-color: #2d2d2d;
-            padding: 8px 12px;
-            border-radius: 5px;
-            margin-bottom: 12px;
-            font-family: monospace;
-        }
-        .search-icon {
-            margin-right: 8px;
-        }
-        .more-terms {
-            background-color: #333;
-            padding: 2px 8px;
-            border-radius: 4px;
-            margin-left: 10px;
-            font-size: 12px;
-        }
-        .source-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .source-item {
-            display: flex;
-            align-items: center;
-            background-color: #2d2d2d;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 12px;
-        }
-        .source-icon {
-            height: 16px;
-            width: 16px;
-            margin-right: 5px;
-        }
         .thinking-box {
             background-color: #1a1a1a;
             color: #a0a0a0;
@@ -170,7 +105,7 @@ def main():
     # App title and description
     col1, col2 = st.columns([6, 1])
     with col1:
-        st.title("🔍 Perplexity AI Research Assistant")
+        st.title(":mag: Perplexity AI Research Assistant")
     with col2:
         current_time = datetime.now().strftime("%b %d, %Y")
         st.markdown(f"<div style='text-align: right; padding-top: 1rem;'>{current_time}</div>", unsafe_allow_html=True)
@@ -179,7 +114,7 @@ def main():
     
     # Sidebar configuration
     with st.sidebar:
-        st.header("⚙️ Configuration")
+        st.header(":gear: Configuration")
         
         # API Key handling
         api_key = st.text_input("Enter your Perplexity API Key", type="password")
@@ -230,10 +165,10 @@ def main():
     # Display chat history
     for idx, message in enumerate(st.session_state.messages):
         if message["role"] == "user":
-            with st.chat_message("user", avatar="👤"):
+            with st.chat_message("user", avatar=":bust_in_silhouette:"):
                 st.markdown(f"<div class='user-message'>{message['content']}</div>", unsafe_allow_html=True)
         else:
-            with st.chat_message("assistant", avatar="🔍"):
+            with st.chat_message("assistant", avatar=":mag:"):
                 st.markdown(f"<div class='assistant-message'>{message['content']}</div>", unsafe_allow_html=True)
                 if "metadata" in message:
                     st.markdown(f"<div class='meta-info'>Response time: {message['metadata']['time_taken']}s</div>", 
@@ -245,27 +180,15 @@ def main():
         st.session_state.messages.append({"role": "user", "content": prompt})
         
         # Display user message
-        with st.chat_message("user", avatar="👤"):
+        with st.chat_message("user", avatar=":bust_in_silhouette:"):
             st.markdown(f"<div class='user-message'>{prompt}</div>", unsafe_allow_html=True)
         
         # Display assistant response with thinking animation
-        with st.chat_message("assistant", avatar="🔍"):
+        with st.chat_message("assistant", avatar=":mag:"):
             response_container = st.empty()
             
-            # Show Deep Research context box
+            # Show thinking/searching status
             response_container.markdown(
-                f'<div class="research-context-box">'
-                f'<div class="context-header"><img src="https://storage.googleapis.com/public-resource/perplexity-icon.png" class="context-icon"> Deep Research <span class="source-count">20 sources</span></div>'
-                f'<div class="context-description">I will search the web for information on "{prompt[:40]}{"..." if len(prompt) > 40 else ""}" to gather a comprehensive understanding from multiple reliable sources.</div>'
-                f'<div class="search-terms"><span class="search-icon">🔍</span> {prompt[:25]}{"..." if len(prompt) > 25 else ""} <span class="more-terms">+2 more</span></div>'
-                f'<div class="source-list">'
-                f'<span class="source-item"><img src="https://storage.googleapis.com/public-resource/google.png" class="source-icon"> cloud.google</span>'
-                f'<span class="source-item"><img src="https://storage.googleapis.com/public-resource/aws.png" class="source-icon"> aws.amazon</span>'
-                f'<span class="source-item"><img src="https://storage.googleapis.com/public-resource/rice.png" class="source-icon"> csweb.rice</span>'
-                f'<span class="source-item"><img src="https://storage.googleapis.com/public-resource/ibm.png" class="source-icon"> ibm</span>'
-                f'<span class="source-item"><img src="https://storage.googleapis.com/public-resource/britannica.png" class="source-icon"> britannica</span>'
-                f'</div>'
-                f'</div>'
                 f'<div class="thinking-box">'
                 f'<span class="searching-text">Searching</span><br>'
                 f'<span>{prompt[:40]}{"..." if len(prompt) > 40 else ""}</span>'
