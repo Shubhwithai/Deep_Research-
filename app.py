@@ -67,27 +67,23 @@ def apply_custom_css():
 # Function to initialize the chat model
 def initialize_chat_model(api_key: str) -> ChatOpenAI:
     """Initialize the ChatOpenAI model with the provided API key."""
-    try:
-        return ChatOpenAI(
-            openai_api_key=api_key,
-            openai_api_base=API_BASE_URL,
-            model=MODEL_NAME,
-            max_tokens=2000
-        )
-    except Exception as e:
-        st.error(f"Failed to initialize chat model: {str(e)}")
-        return None
+    return ChatOpenAI(
+        openai_api_key=api_key,
+        openai_api_base=API_BASE_URL,
+        model=MODEL_NAME,
+        max_tokens=2000
+    )
 
 # Function to save chat history
-def save_chat_history(messages: List[Dict], filename: str = CHAT_HISTORY_FILE) -> bool:
+def save_chat_history(messages: List[Dict], filename: str = CHAT_HISTORY_FILE) -> str:
     """Save chat history to a JSON file."""
     try:
         with open(filename, "w") as f:
             json.dump(messages, f, indent=4)
-        return True
+        return filename
     except Exception as e:
         st.error(f"Failed to save chat history: {str(e)}")
-        return False
+        return ""
 
 # Function to load chat history
 def load_chat_history(filename: str = CHAT_HISTORY_FILE) -> List[Dict]:
@@ -188,13 +184,10 @@ def main():
 
     # Initialize chat model with provided API key
     chat_model = initialize_chat_model(api_key)
-    if chat_model is None:
-        st.error("Failed to initialize chat model. Please check your API key and try again.")
-        return
 
     # Initialize chat history in session state
     if "messages" not in st.session_state:
-        st.session_state.messages = load_chat_history()
+        st.session_state.messages = []
 
     # Display chat history
     display_chat_history(st.session_state.messages)
@@ -246,9 +239,6 @@ def main():
                     "model": MODEL_NAME
                 }
             })
-
-        # Save chat history
-        save_chat_history(st.session_state.messages)
 
 if __name__ == "__main__":
     main()
