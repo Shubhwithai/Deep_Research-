@@ -2,14 +2,15 @@ import streamlit as st
 import os
 import time
 from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage, SystemMessage
+from langchain.schema import HumanMessage
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
+import uuid
 
 # Page config for better appearance
 st.set_page_config(
     page_title="Perplexity AI Research Assistant",
-    page_icon=":mag:",
+    page_icon="🔍",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -23,19 +24,43 @@ def initialize_chat_model(api_key):
         max_tokens=2000
     )
 
-# Function to save chat history
-def save_chat_history(filename="chat_history.json"):
-    with open(filename, "w") as f:
-        json.dump(st.session_state.messages, f)
-    return filename
+# Function to save all chats
+def save_all_chats():
+    if not os.path.exists("chats"):
+        os.makedirs("chats")
+    
+    for chat_id, chat_data in st.session_state.chats.items():
+        with open(f"chats/{chat_id}.json", "w") as f:
+            json.dump(chat_data, f)
 
-# Function to load chat history
-def load_chat_history(filename="chat_history.json"):
-    try:
-        with open(filename, "r") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
+# Function to load all saved chats
+def load_all_chats():
+    chats = {}
+    if not os.path.exists("chats"):
+        os.makedirs("chats")
+        return chats
+    
+    for filename in os.listdir("chats"):
+        if filename.endswith(".json"):
+            chat_id = filename.split(".")[0]
+            try:
+                with open(f"chats/{chat_id}.json", "r") as f:
+                    chats[chat_id] = json.load(f)
+            except:
+                pass
+    return chats
+
+# Function to create a new chat
+def create_new_chat():
+    chat_id = str(uuid.uuid4())
+    st.session_state.chats[chat_id] = {
+        "title": f"New Chat {len(st.session_state.chats) + 1}",
+        "messages": [],
+        "created_at": datetime.now().isoformat(),
+        "updated_at": datetime.now().isoformat()
+    }
+    st.session_state.current_chat_id = chat_id
+    return chat_id
 
 # Function to handle chat
 def process_chat(prompt):
@@ -105,7 +130,7 @@ def main():
     # App title and description
     col1, col2 = st.columns([6, 1])
     with col1:
-        st.title(":mag: Perplexity AI Research Assistant")
+        st.title("🔍 Perplexity AI Research Assistant")
     with col2:
         current_time = datetime.now().strftime("%b %d, %Y")
         st.markdown(f"<div style='text-align: right; padding-top: 1rem;'>{current_time}</div>", unsafe_allow_html=True)
@@ -114,7 +139,7 @@ def main():
     
     # Sidebar configuration
     with st.sidebar:
-        st.header(":gear: Configuration")
+        st.header("⚙️ Configuration")
         
         # API Key handling
         api_key = st.text_input("Enter your Perplexity API Key", type="password")
@@ -158,17 +183,34 @@ def main():
     global chat
     chat = initialize_chat_model(st.session_state.api_key)
     
-    # Initialize chat history in session state
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+    # Initialize chat system in session state
+    if "chats" not in st.session_state:
+        st.session_state.chats = load_all_chats()
+        
+    if "current_chat_id" not in st.session_state or st.session_state.current_chat_id not in st.session_state.chats:
+        # If no chats exist, create a new one
+        if not st.session_state.chats:
+            create_new_chat()
+        else:
+            # Use the most recent chat
+            recent_chat_id = max(st.session_state.chats.keys(), 
+                               key=lambda k: st.session_state.chats[k].get("updated_at", ""))
+            st.session_state.current_chat_id = recent_chat_id
+            
+    # For convenience, get current chat messages
+    current_chat = st.session_state.chats[st.session_state.current_chat_id]
+    current_messages = current_chat["messages"]
     
-    # Display chat history
-    for idx, message in enumerate(st.session_state.messages):
+    # Show current chat title in main area
+    st.subheader(f"💬 {current_chat['title']}")
+    
+    # Display current chat history
+    for idx, message in enumerate(current_messages):
         if message["role"] == "user":
-            with st.chat_message("user", avatar=":bust_in_silhouette:"):
+            with st.chat_message("user", avatar="👤"):
                 st.markdown(f"<div class='user-message'>{message['content']}</div>", unsafe_allow_html=True)
         else:
-            with st.chat_message("assistant", avatar=":mag:"):
+            with st.chat_message("assistant", avatar="🔍"):
                 st.markdown(f"<div class='assistant-message'>{message['content']}</div>", unsafe_allow_html=True)
                 if "metadata" in message:
                     st.markdown(f"<div class='meta-info'>Response time: {message['metadata']['time_taken']}s</div>", 
@@ -176,15 +218,23 @@ def main():
     
     # Chat input
     if prompt := st.chat_input("What would you like to research today?"):
+        # Update chat title based on first message if it's a new chat
+        if len(current_messages) == 0:
+            current_chat["title"] = prompt[:30] + ("..." if len(prompt) > 30 else "")
+        
         # Add user message to chat history
-        st.session_state.messages.append({"role": "user", "content": prompt})
+        current_messages.append({"role": "user", "content": prompt})
+        current_chat["updated_at"] = datetime.now().isoformat()
+        
+        # Save chats after every message
+        save_all_chats()
         
         # Display user message
-        with st.chat_message("user", avatar=":bust_in_silhouette:"):
+        with st.chat_message("user", avatar="👤"):
             st.markdown(f"<div class='user-message'>{prompt}</div>", unsafe_allow_html=True)
         
         # Display assistant response with thinking animation
-        with st.chat_message("assistant", avatar=":mag:"):
+        with st.chat_message("assistant", avatar="🔍"):
             response_container = st.empty()
             
             # Show thinking/searching status
@@ -212,7 +262,7 @@ def main():
             )
             
             # Add to chat history with metadata
-            st.session_state.messages.append({
+            current_messages.append({
                 "role": "assistant",
                 "content": response_data['content'],
                 "metadata": {
@@ -221,6 +271,10 @@ def main():
                     "model": "sonar-deep-research"
                 }
             })
+            
+            # Update chat and save
+            current_chat["updated_at"] = datetime.now().isoformat()
+            save_all_chats()
 
 if __name__ == "__main__":
     main()
