@@ -129,7 +129,8 @@ if prompt := st.chat_input("What's on your mind?"):
         model="sonar-deep-research",
         openai_api_key=st.session_state.perplexity_api_key,
         openai_api_base="https://api.perplexity.ai",
-        max_tokens=2000
+        max_tokens=2000,
+        streaming=True  # Enable streaming
     )
     
     # Add user message to chat history
@@ -147,8 +148,9 @@ if prompt := st.chat_input("What's on your mind?"):
         
         # Stream the response
         for chunk in chat.stream(st.session_state.messages):
-            if chunk.content:
-                full_response += chunk.content
+            if isinstance(chunk, dict) and "content" in chunk:  # Handle dictionary response
+                content = chunk["content"]
+                full_response += content
                 # Only update message placeholder during streaming if no thinking tags detected yet
                 if "<think>" not in full_response:
                     message_placeholder.write(full_response)
