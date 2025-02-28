@@ -27,7 +27,7 @@ def apply_custom_css():
         .stChatMessage {
             background-color: #1A1A1A;
             border-radius: 10px;
-            padding: 0.5rem;
+            padding: 1rem;
             margin-bottom: 1rem;
         }
         .user-message {
@@ -35,12 +35,14 @@ def apply_custom_css():
             color: white;
             padding: 1rem;
             border-radius: 8px;
+            margin-bottom: 0.5rem;
         }
         .assistant-message {
             background-color: #1E1E1E;
             color: #F0F0F0;
             padding: 1rem;
             border-radius: 8px;
+            margin-bottom: 0.5rem;
         }
         .thinking-box {
             background-color: #1A1A1A;
@@ -57,6 +59,7 @@ def apply_custom_css():
             font-size: 0.8rem;
             color: #888;
             text-align: right;
+            margin-top: 0.5rem;
         }
         .sidebar .block-container {
             background-color: #1A1A1A;
@@ -142,6 +145,7 @@ def sidebar_configuration() -> Optional[str]:
         st.session_state.api_key = api_key
         st.sidebar.success("API Key saved!")
 
+    st.sidebar.divider()
 
     # New buttons
     st.sidebar.subheader("Actions")
@@ -150,7 +154,7 @@ def sidebar_configuration() -> Optional[str]:
         st.rerun()
 
     st.sidebar.markdown("---")  # Divider
-    st.write("❤️ Built by [Build Fast with AI](https://buildfastwithai.com/genai-course)")
+    st.sidebar.markdown("**Built by Build Fast with AI**", help="This app is powered by AI and Streamlit.")
 
     return api_key if api_key else None
 
