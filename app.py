@@ -70,6 +70,14 @@ def main():
             margin-left: 20px;
             color: white;
         }
+        .answer-box {
+            background-color: #1a1a1a;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 16px;
+        }
         </style>
     """, unsafe_allow_html=True)
     
@@ -85,16 +93,17 @@ def main():
         with st.chat_message("user"):
             st.markdown(prompt)
         
-        # Show thinking/searching and response in a collapsible box
+        # Show thinking/searching and response in a separate research box
         with st.chat_message("assistant"):
-            # Create a container for the collapsible research box
+            # Create containers for research box and answer
             research_box = st.empty()
+            answer_box = st.empty()
             
             # Initialize collapse state if not present
             if "research_collapsed" not in st.session_state:
                 st.session_state.research_collapsed = False
             
-            # Show thinking status first
+            # Show thinking status in the research box
             research_box.markdown("""
                 <div class="research-box">
                     <div class="research-header" onclick="javascript:document.querySelector('.research-box').classList.toggle('collapsed');">
@@ -116,7 +125,7 @@ def main():
                     # Get response from Perplexity
                     response = chat(messages)
                     
-                    # Update the research box with the final response
+                    # Update the research box with the detailed research process
                     research_content = [
                         f"<div class='result-item'>I found some pre-market news and analysis for February 28, 2025, which includes key economic indicators, earnings reports, and significant market movements that traders should be aware of before the markets open.</div>",
                         f"<div class='result-item'>I found sufficient information to answer your query about what you should know before the markets open today.</div>",
@@ -141,13 +150,17 @@ def main():
                         </div>
                     """.format("\n".join(research_content)), unsafe_allow_html=True)
                     
-                    # Display the summary answer above the research box
-                    st.markdown(f"**Answer:** Based on the latest pre-market analysis for February 28, 2025, you should be aware of key market movements including a slight decline in the Nifty, a significant drop in South Korea's Kospi, potential tariff threats from Trump affecting the European Union, and broader market declines like the Nasdaq Composite. These factors could impact market sentiment today.")
+                    # Display the final answer separately in an answer box
+                    answer_box.markdown("""
+                        <div class="answer-box">
+                            **Answer:** Based on the latest pre-market analysis for February 28, 2025, you should be aware of key market movements including a slight decline in the Nifty, a significant drop in South Korea's Kospi, potential tariff threats from Trump affecting the European Union, and broader market declines like the Nasdaq Composite. These factors could impact market sentiment today.
+                        </div>
+                    """, unsafe_allow_html=True)
                     
-                    # Add to chat history
+                    # Add to chat history (only the final answer)
                     st.session_state.messages.append({
                         "role": "assistant",
-                        "content": f"**Answer:** Based on the latest pre-market analysis for February 28, 2025, you should be aware of key market movements including a slight decline in the Nifty, a significant drop in South Korea's Kospi, potential tariff threats from Trump affecting the European Union, and broader market declines like the Nasdaq Composite. These factors could impact market sentiment today."
+                        "content": "**Answer:** Based on the latest pre-market analysis for February 28, 2025, you should be aware of key market movements including a slight decline in the Nifty, a significant drop in South Korea's Kospi, potential tariff threats from Trump affecting the European Union, and broader market declines like the Nasdaq Composite. These factors could impact market sentiment today."
                     })
                 except Exception as e:
                     st.error(f"An error occurred: {str(e)}")
