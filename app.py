@@ -144,22 +144,14 @@ def sidebar_configuration() -> Optional[str]:
 
     st.sidebar.divider()
 
-    # Session management
-    st.sidebar.subheader("Session Management")
-    col1, col2 = st.sidebar.columns(2)
-    with col1:
-        if st.sidebar.button("Clear Chat"):
-            st.session_state.messages = []
-            st.rerun()
-    with col2:
-        if st.sidebar.button("Save Chat"):
-            filename = save_chat_history(st.session_state.messages)
-            if filename:
-                st.sidebar.success(f"Saved to {filename}")
-
-    if st.sidebar.button("Load Previous Chat"):
-        st.session_state.messages = load_chat_history()
+    # New buttons
+    st.sidebar.subheader("Actions")
+    if st.sidebar.button("Start New Chat", key="start_new_chat"):
+        st.session_state.messages = []  # Clear chat history
         st.rerun()
+
+    st.sidebar.markdown("---")  # Divider
+    st.sidebar.markdown("**Built by Build Fast with AI**", help="This app is powered by AI and Streamlit.")
 
     return api_key if api_key else None
 
