@@ -15,13 +15,12 @@ st.set_page_config(
 )
 
 # Function to initialize the chat model
-def initialize_chat_model(api_key, model="sonar-deep-research", temperature=0.7):
+def initialize_chat_model(api_key):
     return ChatOpenAI(
         openai_api_key=api_key,
         openai_api_base="https://api.perplexity.ai",
-        model=model,
-        max_tokens=2000,
-        temperature=temperature
+        model="sonar-deep-research",
+        max_tokens=2000
     )
 
 # Function to save chat history
@@ -39,12 +38,9 @@ def load_chat_history(filename="chat_history.json"):
         return []
 
 # Function to handle chat
-def process_chat(prompt, system_prompt=""):
+def process_chat(prompt):
     try:
-        messages = []
-        if system_prompt:
-            messages.append(SystemMessage(content=system_prompt))
-        messages.append(HumanMessage(content=prompt))
+        messages = [HumanMessage(content=prompt)]
         
         # Get response from Perplexity
         with st.spinner(""):
@@ -128,27 +124,6 @@ def main():
         
         st.divider()
         
-        # Model selection and parameters
-        st.subheader("Model Settings")
-        model_option = st.selectbox(
-            "Select Model",
-            options=["sonar-deep-research", "sonar-medium-online", "sonar-small-online"],
-            index=0
-        )
-        
-        temperature = st.slider("Temperature", min_value=0.0, max_value=1.0, value=0.7, step=0.1,
-                               help="Higher values make output more creative, lower values more deterministic")
-        
-        st.divider()
-        
-        # System prompt for model behavior
-        st.subheader("Assistant Behavior")
-        system_prompt = st.text_area(
-            "System Prompt (Optional)",
-            value="You are a helpful research assistant. Provide comprehensive, accurate, and well-cited answers.",
-            help="Instructions that guide how the assistant responds"
-        )
-        
         st.divider()
         
         # Session management
@@ -157,7 +132,7 @@ def main():
         with col1:
             if st.button("Clear Chat"):
                 st.session_state.messages = []
-                st.experimental_rerun()
+                st.rerun()
         with col2:
             if st.button("Save Chat"):
                 filename = save_chat_history()
@@ -165,7 +140,7 @@ def main():
         
         if st.button("Load Previous Chat"):
             st.session_state.messages = load_chat_history()
-            st.experimental_rerun()
+            st.rerun()
     
     # Check if API key is provided
     if "api_key" not in st.session_state or not st.session_state.api_key:
@@ -179,13 +154,9 @@ def main():
         """)
         return
     
-    # Initialize chat model with provided API key and settings
+    # Initialize chat model with provided API key
     global chat
-    chat = initialize_chat_model(
-        st.session_state.api_key,
-        model=model_option,
-        temperature=temperature
-    )
+    chat = initialize_chat_model(st.session_state.api_key)
     
     # Initialize chat history in session state
     if "messages" not in st.session_state:
@@ -226,7 +197,7 @@ def main():
             )
             
             # Process the chat
-            response_data = process_chat(prompt, system_prompt)
+            response_data = process_chat(prompt)
             
             # Display the response
             response_container.markdown(
@@ -247,7 +218,7 @@ def main():
                 "metadata": {
                     "time_taken": response_data['time_taken'],
                     "timestamp": datetime.now().isoformat(),
-                    "model": model_option
+                    "model": "sonar-deep-research"
                 }
             })
 
