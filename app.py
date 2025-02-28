@@ -101,6 +101,29 @@ def load_chat_history(filename: str = CHAT_HISTORY_FILE) -> List[Dict]:
         st.error(f"Failed to load chat history: {str(e)}")
         return []
 
+# Function to handle the sidebar
+def sidebar_configuration() -> Optional[str]:
+    """Configure the sidebar and return the API key if provided."""
+    st.sidebar.header(":gear: Configuration")
+
+    # API Key handling
+    api_key = st.sidebar.text_input("Enter your Perplexity API Key", type="password")
+    if api_key:
+        st.session_state.api_key = api_key
+        st.sidebar.success("API Key saved!")
+
+    # Start New Chat Button
+    st.sidebar.subheader("Actions")
+    if st.sidebar.button("Start New Chat", key="start_new_chat"):
+        st.session_state.messages = []  # Clear chat history
+        st.rerun()
+
+    # Footer
+    st.sidebar.markdown("---")  # Divider
+    st.sidebar.write(":heart: Built by [Build Fast with AI](https://buildfastwithai.com/genai-course)")
+
+    return api_key if api_key else None
+
 # Main Streamlit app
 def main():
     apply_custom_css()
@@ -116,10 +139,7 @@ def main():
     st.markdown("Powered by Sonar Deep Research model - Ask any research question to get comprehensive answers with citations.")
 
     # Sidebar configuration
-    api_key = st.sidebar.text_input("Enter your Perplexity API Key", type="password")
-    if api_key:
-        st.session_state.api_key = api_key
-        st.sidebar.success("API Key saved!")
+    api_key = sidebar_configuration()
 
     # Check if API key is provided
     if not api_key:
@@ -159,18 +179,16 @@ def main():
 
         # Get AI response
         with st.chat_message("assistant"):
-            thinking_placeholder = st.empty()  # Placeholder for thinking process
-            message_placeholder = st.empty()   # Placeholder for the actual message
+            thinking_placeholder = st.empty()  # Place thinking placeholder first
+            message_placeholder = st.empty()   # Then message placeholder
             full_response = ""
 
-            # Simulate streaming response (replace `chat.stream` with your actual streaming logic)
-            for chunk in simulate_streaming_response(chat_model, prompt):
-                if chunk.content:
-                    full_response += chunk.content
-
-                    # Only update message placeholder during streaming if no thinking tags detected yet
-                    if "<think>" not in full_response:
-                        message_placeholder.write(full_response)
+            # Simulate streaming response (replace this with actual `chat.stream`)
+            for chunk in simulate_streaming_response(prompt):
+                full_response += chunk.content + " "
+                # Only update message placeholder during streaming if no thinking tags detected yet
+                if "<think>" not in full_response:
+                    message_placeholder.write(full_response.strip())
 
             # After streaming is complete, check for thinking tags
             if "<think>" in full_response and "</think>" in full_response:
@@ -192,18 +210,17 @@ def main():
             else:
                 # If no thinking tags, clear thinking placeholder and show full response
                 thinking_placeholder.empty()
-                message_placeholder.write(full_response)
+                message_placeholder.write(full_response.strip())
 
         # Save the assistant's response to chat history
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
+        st.session_state.messages.append({"role": "assistant", "content": full_response.strip()})
         save_chat_history(st.session_state.messages)
 
-# Simulate streaming response (replace with actual streaming logic)
-def simulate_streaming_response(chat_model, prompt):
+# Simulate streaming response (replace this with actual `chat.stream`)
+def simulate_streaming_response(prompt: str):
     """Simulate a streaming response for demonstration purposes."""
     full_response = (
-        "This is the AI's response. "
-        "<think>This is the AI's thinking process. It can include reasoning, steps, or intermediate thoughts.</think> "
+        "<think>Thinking about the answer...</think>"
         "Here is the final part of the response."
     )
     for word in full_response.split(" "):
