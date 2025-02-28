@@ -1,5 +1,4 @@
 import streamlit as st
-import os
 import time
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
@@ -123,10 +122,10 @@ def display_chat_history(messages: List[Dict]):
     """Display the chat history in the Streamlit app."""
     for message in messages:
         if message["role"] == "user":
-            with st.chat_message("user", avatar=":bust_in_silhouette:"):
+            with st.chat_message("user", avatar="👤"):  # User avatar
                 st.markdown(f"<div class='user-message'>{message['content']}</div>", unsafe_allow_html=True)
         else:
-            with st.chat_message("assistant", avatar=":mag:"):
+            with st.chat_message("assistant", avatar="🤖"):  # Assistant avatar
                 st.markdown(f"<div class='assistant-message'>{message['content']}</div>", unsafe_allow_html=True)
                 if "metadata" in message:
                     st.markdown(f"<div class='meta-info'>Response time: {message['metadata']['time_taken']}s</div>",
@@ -209,36 +208,36 @@ def main():
         st.session_state.messages.append({"role": "user", "content": prompt})
 
         # Display user message
-    with st.chat_message("user", avatar="👤"):  # Use a valid emoji
-        st.markdown(f"<div class='user-message'>{prompt}</div>", unsafe_allow_html=True)
-    
-    # Display assistant response with thinking animation
-    with st.chat_message("assistant", avatar="🤖"):  # Use a valid emoji
-        response_container = st.empty()
-    
-        # Show thinking/searching status
-        response_container.markdown(
-            f'<div class="thinking-box">'
-            f'<span class="searching-text">Searching</span><br>'
-            f'<span>{prompt[:40]}{"..." if len(prompt) > 40 else ""}</span>'
-            f'</div>',
-            unsafe_allow_html=True
-        )
-    
-        # Process the chat
-        response_data = process_chat(prompt, chat_model)
-    
-        # Display the response
-        response_container.markdown(
-            f"<div class='assistant-message'>{response_data['content']}</div>",
-            unsafe_allow_html=True
-        )
-    
-        # Show metadata about the response
-        st.markdown(
-            f"<div class='meta-info'>Response time: {response_data['time_taken']}s</div>",
-            unsafe_allow_html=True
-        )
+        with st.chat_message("user", avatar="👤"):  # User avatar
+            st.markdown(f"<div class='user-message'>{prompt}</div>", unsafe_allow_html=True)
+
+        # Display assistant response with thinking animation
+        with st.chat_message("assistant", avatar="🤖"):  # Assistant avatar
+            response_container = st.empty()
+
+            # Show thinking/searching status
+            response_container.markdown(
+                f'<div class="thinking-box">'
+                f'<span class="searching-text">Searching</span><br>'
+                f'<span>{prompt[:40]}{"..." if len(prompt) > 40 else ""}</span>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
+
+            # Process the chat
+            response_data = process_chat(prompt, chat_model)
+
+            # Display the response
+            response_container.markdown(
+                f"<div class='assistant-message'>{response_data['content']}</div>",
+                unsafe_allow_html=True
+            )
+
+            # Show metadata about the response
+            st.markdown(
+                f"<div class='meta-info'>Response time: {response_data['time_taken']}s</div>",
+                unsafe_allow_html=True
+            )
 
             # Add to chat history with metadata
             st.session_state.messages.append({
