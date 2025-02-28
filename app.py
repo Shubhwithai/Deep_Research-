@@ -1,7 +1,7 @@
 import streamlit as st
 import time
 from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage
+from langchain.schema import AIMessage, HumanMessage, SystemMessage
 import json
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -165,8 +165,17 @@ def process_chat(prompt: str, chat_model: ChatOpenAI) -> Dict:
             response = chat_model(messages)
             end_time = time.time()
 
+        # Handle different response formats
+        if isinstance(response, list):
+            # Find the first AIMessage in the response list
+            content = next((msg.content for msg in response if isinstance(msg, AIMessage)), None)
+            if content is None:
+                content = "No valid response generated."
+        else:
+            content = response.content
+
         return {
-            "content": response.content,
+            "content": content,
             "time_taken": round(end_time - start_time, 2)
         }
     except Exception as e:
