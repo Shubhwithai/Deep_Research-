@@ -1,23 +1,38 @@
 import streamlit as st
 import os
-from google.colab import userdata
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
 
-# Set up the Perplexity API key
-os.environ["PERPLEXITY_API_KEY"] = userdata.get('PERPLEXITY_API_KEY')
-
-# Initialize ChatOpenAI with Perplexity's endpoint and sonar-deep-research model
-chat = ChatOpenAI(
-    openai_api_key=os.environ["PERPLEXITY_API_KEY"],
-    openai_api_base="https://api.perplexity.ai",
-    model="sonar-deep-research",
-    max_tokens=2000
-)
+# Function to initialize the chat model
+def initialize_chat_model(api_key):
+    return ChatOpenAI(
+        openai_api_key=api_key,
+        openai_api_base="https://api.perplexity.ai",
+        model="sonar-deep-research",
+        max_tokens=2000
+    )
 
 # Streamlit app
 def main():
     st.title("Perplexity AI Chat with Sonar Deep Research")
+    
+    # API Key input in sidebar
+    with st.sidebar:
+        st.header("Configuration")
+        api_key = st.text_input("Enter your Perplexity API Key", type="password")
+        
+        # Store API key in session state
+        if api_key:
+            st.session_state.api_key = api_key
+            st.success("API Key saved!")
+    
+    # Check if API key is provided
+    if "api_key" not in st.session_state or not st.session_state.api_key:
+        st.warning("Please enter your Perplexity API key in the sidebar to continue.")
+        return
+    
+    # Initialize chat model with provided API key
+    chat = initialize_chat_model(st.session_state.api_key)
     
     # Initialize chat history in session state
     if "messages" not in st.session_state:
