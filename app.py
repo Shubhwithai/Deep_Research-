@@ -151,7 +151,7 @@ def sidebar_configuration() -> Optional[str]:
         st.rerun()
 
     st.sidebar.markdown("---")  # Divider
-    st.sidebar.markdown("**Built by Build Fast with AI**", help="This app is powered by AI and Streamlit.")
+    st.write("❤️ Built by [Build Fast with AI](https://buildfastwithai.com/genai-course)")
 
     return api_key if api_key else None
 
