@@ -142,7 +142,6 @@ def sidebar_configuration() -> Optional[str]:
         st.session_state.api_key = api_key
         st.sidebar.success("API Key saved!")
 
-    st.sidebar.divider()
 
     # New buttons
     st.sidebar.subheader("Actions")
