@@ -80,6 +80,71 @@ def main():
             padding: 1rem;
             border-radius: 8px;
         }
+        .research-context-box {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #333;
+        }
+        .context-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .context-icon {
+            height: 20px;
+            width: 20px;
+            margin-right: 10px;
+        }
+        .source-count {
+            margin-left: auto;
+            color: #999;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        .context-description {
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .search-terms {
+            background-color: #2d2d2d;
+            padding: 8px 12px;
+            border-radius: 5px;
+            margin-bottom: 12px;
+            font-family: monospace;
+        }
+        .search-icon {
+            margin-right: 8px;
+        }
+        .more-terms {
+            background-color: #333;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 10px;
+            font-size: 12px;
+        }
+        .source-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .source-item {
+            display: flex;
+            align-items: center;
+            background-color: #2d2d2d;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+        .source-icon {
+            height: 16px;
+            width: 16px;
+            margin-right: 5px;
+        }
         .thinking-box {
             background-color: #1a1a1a;
             color: #a0a0a0;
@@ -187,8 +252,20 @@ def main():
         with st.chat_message("assistant", avatar="🔍"):
             response_container = st.empty()
             
-            # Show thinking/searching status
+            # Show Deep Research context box
             response_container.markdown(
+                f'<div class="research-context-box">'
+                f'<div class="context-header"><img src="https://storage.googleapis.com/public-resource/perplexity-icon.png" class="context-icon"> Deep Research <span class="source-count">20 sources</span></div>'
+                f'<div class="context-description">I will search the web for information on "{prompt[:40]}{"..." if len(prompt) > 40 else ""}" to gather a comprehensive understanding from multiple reliable sources.</div>'
+                f'<div class="search-terms"><span class="search-icon">🔍</span> {prompt[:25]}{"..." if len(prompt) > 25 else ""} <span class="more-terms">+2 more</span></div>'
+                f'<div class="source-list">'
+                f'<span class="source-item"><img src="https://storage.googleapis.com/public-resource/google.png" class="source-icon"> cloud.google</span>'
+                f'<span class="source-item"><img src="https://storage.googleapis.com/public-resource/aws.png" class="source-icon"> aws.amazon</span>'
+                f'<span class="source-item"><img src="https://storage.googleapis.com/public-resource/rice.png" class="source-icon"> csweb.rice</span>'
+                f'<span class="source-item"><img src="https://storage.googleapis.com/public-resource/ibm.png" class="source-icon"> ibm</span>'
+                f'<span class="source-item"><img src="https://storage.googleapis.com/public-resource/britannica.png" class="source-icon"> britannica</span>'
+                f'</div>'
+                f'</div>'
                 f'<div class="thinking-box">'
                 f'<span class="searching-text">Searching</span><br>'
                 f'<span>{prompt[:40]}{"..." if len(prompt) > 40 else ""}</span>'
