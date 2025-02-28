@@ -122,10 +122,10 @@ def display_chat_history(messages: List[Dict]):
     """Display the chat history in the Streamlit app."""
     for message in messages:
         if message["role"] == "user":
-            with st.chat_message("user", avatar=":bust_in_silhouette:"):  # User avatar
+            with st.chat_message("user", avatar="👤"):  # User avatar
                 st.markdown(f"<div class='user-message'>{message['content']}</div>", unsafe_allow_html=True)
         else:
-            with st.chat_message("assistant", avatar=":robot_face:"):  # Assistant avatar
+            with st.chat_message("assistant", avatar="🤖"):  # Assistant avatar
                 st.markdown(f"<div class='assistant-message'>{message['content']}</div>", unsafe_allow_html=True)
                 if "metadata" in message:
                     st.markdown(f"<div class='meta-info'>Response time: {message['metadata']['time_taken']}s</div>",
@@ -142,6 +142,7 @@ def sidebar_configuration() -> Optional[str]:
         st.session_state.api_key = api_key
         st.sidebar.success("API Key saved!")
 
+    st.sidebar.divider()
 
     # New buttons
     st.sidebar.subheader("Actions")
@@ -150,7 +151,7 @@ def sidebar_configuration() -> Optional[str]:
         st.rerun()
 
     st.sidebar.markdown("---")  # Divider
-    st.write(":heart: Built by [Build Fast with AI](https://buildfastwithai.com/genai-course)")
+    st.sidebar.markdown("**Built by Build Fast with AI**", help="This app is powered by AI and Streamlit.")
 
     return api_key if api_key else None
 
@@ -199,11 +200,11 @@ def main():
         st.session_state.messages.append({"role": "user", "content": prompt})
 
         # Display user message
-        with st.chat_message("user", avatar=":bust_in_silhouette:"):  # User avatar
+        with st.chat_message("user", avatar="👤"):  # User avatar
             st.markdown(f"<div class='user-message'>{prompt}</div>", unsafe_allow_html=True)
 
         # Display assistant response with thinking animation
-        with st.chat_message("assistant", avatar=":robot_face:"):  # Assistant avatar
+        with st.chat_message("assistant", avatar="🤖"):  # Assistant avatar
             response_container = st.empty()
 
             # Show thinking/searching status
