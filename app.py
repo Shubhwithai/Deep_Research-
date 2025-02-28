@@ -2,9 +2,10 @@ import streamlit as st
 import os
 import time
 from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage, SystemMessage
+from langchain.schema import HumanMessage
 import json
 from datetime import datetime
+from typing import Dict, List, Optional
 
 # Page config for better appearance
 st.set_page_config(
@@ -14,51 +15,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Function to initialize the chat model
-def initialize_chat_model(api_key):
-    return ChatOpenAI(
-        openai_api_key=api_key,
-        openai_api_base="https://api.perplexity.ai",
-        model="sonar-deep-research",
-        max_tokens=2000
-    )
+# Constants
+CHAT_HISTORY_FILE = "chat_history.json"
+MODEL_NAME = "sonar-deep-research"
+API_BASE_URL = "https://api.perplexity.ai"
 
-# Function to save chat history
-def save_chat_history(filename="chat_history.json"):
-    with open(filename, "w") as f:
-        json.dump(st.session_state.messages, f)
-    return filename
-
-# Function to load chat history
-def load_chat_history(filename="chat_history.json"):
-    try:
-        with open(filename, "r") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
-
-# Function to handle chat
-def process_chat(prompt):
-    try:
-        messages = [HumanMessage(content=prompt)]
-
-        # Get response from Perplexity
-        with st.spinner(""):
-            start_time = time.time()
-            response = chat(messages)
-            end_time = time.time()
-
-        return {
-            "content": response.content,
-            "time_taken": round(end_time - start_time, 2)
-        }
-    except Exception as e:
-        st.error(f"Error: {str(e)}")
-        return {"content": f"I encountered an error: {str(e)}", "time_taken": 0}
-
-# Streamlit app
-def main():
-    # Custom CSS for better UI
+# Custom CSS for better UI
+def apply_custom_css():
     st.markdown("""
         <style>
         .main .block-container {padding-top: 2rem;}
@@ -102,6 +65,109 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
+# Function to initialize the chat model
+def initialize_chat_model(api_key: str) -> ChatOpenAI:
+    """Initialize the ChatOpenAI model with the provided API key."""
+    return ChatOpenAI(
+        openai_api_key=api_key,
+        openai_api_base=API_BASE_URL,
+        model=MODEL_NAME,
+        max_tokens=2000
+    )
+
+# Function to save chat history
+def save_chat_history(messages: List[Dict], filename: str = CHAT_HISTORY_FILE) -> str:
+    """Save chat history to a JSON file."""
+    try:
+        with open(filename, "w") as f:
+            json.dump(messages, f, indent=4)
+        return filename
+    except Exception as e:
+        st.error(f"Failed to save chat history: {str(e)}")
+        return ""
+
+# Function to load chat history
+def load_chat_history(filename: str = CHAT_HISTORY_FILE) -> List[Dict]:
+    """Load chat history from a JSON file."""
+    try:
+        with open(filename, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
+    except Exception as e:
+        st.error(f"Failed to load chat history: {str(e)}")
+        return []
+
+# Function to handle chat
+def process_chat(prompt: str, chat_model: ChatOpenAI) -> Dict:
+    """Process the user's prompt and return the assistant's response."""
+    try:
+        messages = [HumanMessage(content=prompt)]
+
+        # Get response from Perplexity
+        with st.spinner(""):
+            start_time = time.time()
+            response = chat_model(messages)
+            end_time = time.time()
+
+        return {
+            "content": response.content,
+            "time_taken": round(end_time - start_time, 2)
+        }
+    except Exception as e:
+        st.error(f"Error processing chat: {str(e)}")
+        return {"content": f"I encountered an error: {str(e)}", "time_taken": 0}
+
+# Function to display chat history
+def display_chat_history(messages: List[Dict]):
+    """Display the chat history in the Streamlit app."""
+    for message in messages:
+        if message["role"] == "user":
+            with st.chat_message("user", avatar=":bust_in_silhouette:"):
+                st.markdown(f"<div class='user-message'>{message['content']}</div>", unsafe_allow_html=True)
+        else:
+            with st.chat_message("assistant", avatar=":mag:"):
+                st.markdown(f"<div class='assistant-message'>{message['content']}</div>", unsafe_allow_html=True)
+                if "metadata" in message:
+                    st.markdown(f"<div class='meta-info'>Response time: {message['metadata']['time_taken']}s</div>",
+                                unsafe_allow_html=True)
+
+# Function to handle the sidebar
+def sidebar_configuration() -> Optional[str]:
+    """Configure the sidebar and return the API key if provided."""
+    st.sidebar.header(":gear: Configuration")
+
+    # API Key handling
+    api_key = st.sidebar.text_input("Enter your Perplexity API Key", type="password")
+    if api_key:
+        st.session_state.api_key = api_key
+        st.sidebar.success("API Key saved!")
+
+    st.sidebar.divider()
+
+    # Session management
+    st.sidebar.subheader("Session Management")
+    col1, col2 = st.sidebar.columns(2)
+    with col1:
+        if st.sidebar.button("Clear Chat"):
+            st.session_state.messages = []
+            st.rerun()
+    with col2:
+        if st.sidebar.button("Save Chat"):
+            filename = save_chat_history(st.session_state.messages)
+            if filename:
+                st.sidebar.success(f"Saved to {filename}")
+
+    if st.sidebar.button("Load Previous Chat"):
+        st.session_state.messages = load_chat_history()
+        st.rerun()
+
+    return api_key if api_key else None
+
+# Main Streamlit app
+def main():
+    apply_custom_css()
+
     # App title and description
     col1, col2 = st.columns([6, 1])
     with col1:
@@ -113,37 +179,10 @@ def main():
     st.markdown("Powered by Sonar Deep Research model - Ask any research question to get comprehensive answers with citations.")
 
     # Sidebar configuration
-    with st.sidebar:
-        st.header(":gear: Configuration")
-
-        # API Key handling
-        api_key = st.text_input("Enter your Perplexity API Key", type="password")
-        if api_key:
-            st.session_state.api_key = api_key
-            st.success("API Key saved!")
-
-        st.divider()
-
-        st.divider()
-
-        # Session management
-        st.subheader("Session Management")
-        col1, col2 = st.sidebar.columns(2)
-        with col1:
-            if st.button("Clear Chat"):
-                st.session_state.messages = []
-                st.rerun()
-        with col2:
-            if st.button("Save Chat"):
-                filename = save_chat_history()
-                st.success(f"Saved to {filename}")
-
-        if st.button("Load Previous Chat"):
-            st.session_state.messages = load_chat_history()
-            st.rerun()
+    api_key = sidebar_configuration()
 
     # Check if API key is provided
-    if "api_key" not in st.session_state or not st.session_state.api_key:
+    if not api_key:
         st.warning("Please enter your Perplexity API key in the sidebar to continue.")
         st.markdown("""
         ### How to get a Perplexity API key
@@ -155,24 +194,14 @@ def main():
         return
 
     # Initialize chat model with provided API key
-    global chat
-    chat = initialize_chat_model(st.session_state.api_key)
+    chat_model = initialize_chat_model(api_key)
 
     # Initialize chat history in session state
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
     # Display chat history
-    for idx, message in enumerate(st.session_state.messages):
-        if message["role"] == "user":
-            with st.chat_message("user", avatar=":bust_in_silhouette:"):
-                st.markdown(f"<div class='user-message'>{message['content']}</div>", unsafe_allow_html=True)
-        else:
-            with st.chat_message("assistant", avatar=":mag:"):
-                st.markdown(f"<div class='assistant-message'>{message['content']}</div>", unsafe_allow_html=True)
-                if "metadata" in message:
-                    st.markdown(f"<div class='meta-info'>Response time: {message['metadata']['time_taken']}s</div>",
-                                unsafe_allow_html=True)
+    display_chat_history(st.session_state.messages)
 
     # Chat input
     if prompt := st.chat_input("What would you like to research today?"):
@@ -197,7 +226,7 @@ def main():
             )
 
             # Process the chat
-            response_data = process_chat(prompt)
+            response_data = process_chat(prompt, chat_model)
 
             # Display the response
             response_container.markdown(
@@ -218,7 +247,7 @@ def main():
                 "metadata": {
                     "time_taken": response_data['time_taken'],
                     "timestamp": datetime.now().isoformat(),
-                    "model": "sonar-deep-research"
+                    "model": MODEL_NAME
                 }
             })
 
