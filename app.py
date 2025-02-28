@@ -1,6 +1,6 @@
 import streamlit as st
 import time
-from langchain_community.chat_models import ChatOpenAI  # Updated import
+from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
 import json
 from datetime import datetime
@@ -67,27 +67,23 @@ def apply_custom_css():
 # Function to initialize the chat model
 def initialize_chat_model(api_key: str) -> ChatOpenAI:
     """Initialize the ChatOpenAI model with the provided API key."""
-    try:
-        return ChatOpenAI(
-            openai_api_key=api_key,
-            openai_api_base=API_BASE_URL,
-            model=MODEL_NAME,
-            max_tokens=2000
-        )
-    except Exception as e:
-        st.error(f"Failed to initialize chat model: {str(e)}")
-        return None
+    return ChatOpenAI(
+        openai_api_key=api_key,
+        openai_api_base=API_BASE_URL,
+        model=MODEL_NAME,
+        max_tokens=2000
+    )
 
 # Function to save chat history
-def save_chat_history(messages: List[Dict], filename: str = CHAT_HISTORY_FILE) -> bool:
+def save_chat_history(messages: List[Dict], filename: str = CHAT_HISTORY_FILE) -> str:
     """Save chat history to a JSON file."""
     try:
         with open(filename, "w") as f:
             json.dump(messages, f, indent=4)
-        return True
+        return filename
     except Exception as e:
         st.error(f"Failed to save chat history: {str(e)}")
-        return False
+        return ""
 
 # Function to load chat history
 def load_chat_history(filename: str = CHAT_HISTORY_FILE) -> List[Dict]:
@@ -101,6 +97,40 @@ def load_chat_history(filename: str = CHAT_HISTORY_FILE) -> List[Dict]:
         st.error(f"Failed to load chat history: {str(e)}")
         return []
 
+# Function to handle chat
+def process_chat(prompt: str, chat_model: ChatOpenAI) -> Dict:
+    """Process the user's prompt and return the assistant's response."""
+    try:
+        messages = [HumanMessage(content=prompt)]
+
+        # Get response from Perplexity
+        with st.spinner(""):
+            start_time = time.time()
+            response = chat_model(messages)
+            end_time = time.time()
+
+        return {
+            "content": response.content,
+            "time_taken": round(end_time - start_time, 2)
+        }
+    except Exception as e:
+        st.error(f"Error processing chat: {str(e)}")
+        return {"content": f"I encountered an error: {str(e)}", "time_taken": 0}
+
+# Function to display chat history
+def display_chat_history(messages: List[Dict]):
+    """Display the chat history in the Streamlit app."""
+    for message in messages:
+        if message["role"] == "user":
+            with st.chat_message("user", avatar="👤"):  # User avatar
+                st.markdown(f"<div class='user-message'>{message['content']}</div>", unsafe_allow_html=True)
+        else:
+            with st.chat_message("assistant", avatar="🤖"):  # Assistant avatar
+                st.markdown(f"<div class='assistant-message'>{message['content']}</div>", unsafe_allow_html=True)
+                if "metadata" in message:
+                    st.markdown(f"<div class='meta-info'>Response time: {message['metadata']['time_taken']}s</div>",
+                                unsafe_allow_html=True)
+
 # Function to handle the sidebar
 def sidebar_configuration() -> Optional[str]:
     """Configure the sidebar and return the API key if provided."""
@@ -112,13 +142,12 @@ def sidebar_configuration() -> Optional[str]:
         st.session_state.api_key = api_key
         st.sidebar.success("API Key saved!")
 
-    # Start New Chat Button
+    # New buttons
     st.sidebar.subheader("Actions")
     if st.sidebar.button("Start New Chat", key="start_new_chat"):
         st.session_state.messages = []  # Clear chat history
         st.rerun()
 
-    # Footer
     st.sidebar.markdown("---")  # Divider
     st.sidebar.write(":heart: Built by [Build Fast with AI](https://buildfastwithai.com/genai-course)")
 
@@ -155,18 +184,13 @@ def main():
 
     # Initialize chat model with provided API key
     chat_model = initialize_chat_model(api_key)
-    if chat_model is None:
-        st.error("Failed to initialize chat model. Please check your API key and try again.")
-        return
 
     # Initialize chat history in session state
     if "messages" not in st.session_state:
-        st.session_state.messages = load_chat_history()
+        st.session_state.messages = []
 
     # Display chat history
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.write(message["content"])
+    display_chat_history(st.session_state.messages)
 
     # Chat input
     if prompt := st.chat_input("What would you like to research today?"):
@@ -174,58 +198,47 @@ def main():
         st.session_state.messages.append({"role": "user", "content": prompt})
 
         # Display user message
-        with st.chat_message("user"):
-            st.write(prompt)
+        with st.chat_message("user", avatar="👤"):  # User avatar
+            st.markdown(f"<div class='user-message'>{prompt}</div>", unsafe_allow_html=True)
 
-        # Get AI response
-        with st.chat_message("assistant"):
-            thinking_placeholder = st.empty()  # Place thinking placeholder first
-            message_placeholder = st.empty()   # Then message placeholder
-            full_response = ""
+        # Display assistant response with thinking animation
+        with st.chat_message("assistant", avatar="🤖"):  # Assistant avatar
+            response_container = st.empty()
 
-            # Simulate streaming response (replace this with actual `chat.stream`)
-            for chunk in simulate_streaming_response(prompt):
-                full_response += chunk.content + " "
-                # Only update message placeholder during streaming if no thinking tags detected yet
-                if "<think>" not in full_response:
-                    message_placeholder.write(full_response.strip())
+            # Show thinking/searching status
+            response_container.markdown(
+                f'<div class="thinking-box">'
+                f'<span class="searching-text">Searching</span><br>'
+                f'<span>{prompt[:40]}{"..." if len(prompt) > 40 else ""}</span>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
 
-            # After streaming is complete, check for thinking tags
-            if "<think>" in full_response and "</think>" in full_response:
-                # Extract thinking content
-                think_start = full_response.index("<think>")
-                think_end = full_response.index("</think>") + len("</think>")
-                thinking = full_response[think_start:think_end]
+            # Process the chat
+            response_data = process_chat(prompt, chat_model)
 
-                # Extract actual response
-                actual_response = full_response[think_end:].strip()
+            # Display the response
+            response_container.markdown(
+                f"<div class='assistant-message'>{response_data['content']}</div>",
+                unsafe_allow_html=True
+            )
 
-                # First display thinking in expandable section
-                with thinking_placeholder:
-                    with st.expander("Show AI thinking process"):
-                        st.write(thinking)
+            # Show metadata about the response
+            st.markdown(
+                f"<div class='meta-info'>Response time: {response_data['time_taken']}s</div>",
+                unsafe_allow_html=True
+            )
 
-                # Then display actual response
-                message_placeholder.write(actual_response)
-            else:
-                # If no thinking tags, clear thinking placeholder and show full response
-                thinking_placeholder.empty()
-                message_placeholder.write(full_response.strip())
-
-        # Save the assistant's response to chat history
-        st.session_state.messages.append({"role": "assistant", "content": full_response.strip()})
-        save_chat_history(st.session_state.messages)
-
-# Simulate streaming response (replace this with actual `chat.stream`)
-def simulate_streaming_response(prompt: str):
-    """Simulate a streaming response for demonstration purposes."""
-    full_response = (
-        "<think>Thinking about the answer...</think>"
-        "Here is the final part of the response."
-    )
-    for word in full_response.split(" "):
-        time.sleep(0.1)  # Simulate delay
-        yield HumanMessage(content=word + " ")
+            # Add to chat history with metadata
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": response_data['content'],
+                "metadata": {
+                    "time_taken": response_data['time_taken'],
+                    "timestamp": datetime.now().isoformat(),
+                    "model": MODEL_NAME
+                }
+            })
 
 if __name__ == "__main__":
     main()
